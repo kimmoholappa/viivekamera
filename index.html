@@ -1,213 +1,276 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Viivekamera</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #000; font-family: 'Courier New', monospace; color: #fff; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
 
-  #app {
-    width: 100%;
-    min-height: 520px;
-    background: #0a0a0a;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    gap: 1rem;
-  }
+    #app {
+      width: 100%;
+      height: 100svh;
+      background: #000;
+      font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  #permission-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    text-align: center;
-    padding: 2rem;
-  }
-  #permission-screen h2 {
-    font-size: 20px;
-    font-weight: 400;
-    letter-spacing: 0.15em;
-    color: #e0e0e0;
-  }
-  #permission-screen p {
-    font-size: 13px;
-    color: #666;
-    max-width: 300px;
-    line-height: 1.6;
-  }
-  #start-btn {
-    background: transparent;
-    border: 1px solid #444;
-    color: #ccc;
-    padding: 10px 28px;
-    font-family: inherit;
-    font-size: 13px;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
-  #start-btn:hover { border-color: #888; color: #fff; }
+    #permission-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      text-align: center;
+      padding: 2rem;
+      height: 100%;
+    }
 
-  #cam-screen {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-  }
+    #permission-screen .icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #1c7aed, #34aadc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+    }
 
-  #video-container {
-    position: relative;
-    width: 100%;
-    max-width: 640px;
-    aspect-ratio: 16/9;
-    background: #000;
-    border-radius: 4px;
-    overflow: hidden;
-  }
+    #permission-screen h2 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+    }
 
-  #delayed-canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
-  }
+    #permission-screen p {
+      font-size: 15px;
+      color: #ffffff;
+      max-width: 260px;
+      line-height: 1.5;
+    }
 
-  #live-pip {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    width: 22%;
-    aspect-ratio: 16/9;
-    border-radius: 3px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: #111;
-  }
-  #live-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+    #start-btn {
+      background: #ffffff;
+      border: none;
+      color: #000000;
+      padding: 14px 36px;
+      font-family: inherit;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 14px;
+      letter-spacing: -0.2px;
+      transition: opacity 0.15s;
+    }
+    #start-btn:hover { opacity: 0.85; }
+    #start-btn:active { opacity: 0.7; transform: scale(0.98); }
 
-  #delay-label {
-    position: absolute;
-    top: 10px;
-    left: 12px;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    color: rgba(255,255,255,0.5);
-    background: rgba(0,0,0,0.4);
-    padding: 3px 8px;
-    border-radius: 2px;
-  }
+    #cam-screen {
+      display: none;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
 
-  #pip-label {
-    position: absolute;
-    bottom: 3px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.5);
-    white-space: nowrap;
-  }
+    #delayed-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
 
-  #buffering-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 2px;
-    background: rgba(255,255,255,0.15);
-    width: 100%;
-  }
-  #buffering-fill {
-    height: 100%;
-    background: rgba(255,255,255,0.5);
-    width: 0%;
-    transition: width 0.1s linear;
-  }
+    #buffering-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      transition: opacity 0.4s;
+    }
+    #buffering-overlay.hidden { opacity: 0; pointer-events: none; }
 
-  #controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+    #buf-label {
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
 
-  .delay-btn {
-    background: transparent;
-    border: 1px solid #333;
-    color: #777;
-    padding: 6px 14px;
-    font-family: inherit;
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.15s;
-  }
-  .delay-btn:hover { border-color: #555; color: #ccc; }
-  .delay-btn.active { border-color: #888; color: #fff; background: rgba(255,255,255,0.06); }
+    #buf-track {
+      width: 140px;
+      height: 3px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 2px;
+      overflow: hidden;
+    }
 
-  #cam-toggle {
-    background: transparent;
-    border: 1px solid #333;
-    color: #777;
-    padding: 6px 14px;
-    font-family: inherit;
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.15s;
-    margin-left: 8px;
-  }
-  #cam-toggle:hover { border-color: #555; color: #ccc; }
+    #buf-fill {
+      height: 100%;
+      background: #ffffff;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
 
-  #status-text {
-    font-size: 11px;
-    color: #444;
-    letter-spacing: 0.1em;
-    min-height: 16px;
-  }
+    #pip-container {
+      position: absolute;
+      top: 20px;
+      right: 16px;
+      width: 100px;
+      aspect-ratio: 3/4;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.35);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      cursor: pointer;
+      touch-action: none;
+      z-index: 10;
+    }
 
-  #hidden-capture { display: none; }
-</style>
+    #live-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
 
+    #bottom-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 20px 24px 48px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%);
+      z-index: 10;
+    }
+
+    #delay-pills {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #ffffff;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: -0.1px;
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+
+    .pill.active {
+      background: #ffffff;
+      color: #000000;
+      border-color: transparent;
+    }
+
+    .pill:active { transform: scale(0.94); }
+
+    #flip-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    #flip-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.3); }
+    #flip-btn svg { width: 22px; height: 22px; fill: #ffffff; }
+
+    #delay-badge {
+      position: absolute;
+      top: 20px;
+      left: 16px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 10px;
+      letter-spacing: 0.02em;
+      z-index: 10;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body>
 <div id="app">
   <div id="permission-screen">
-    <h2>DELAY CAM</h2>
-    <p>Watch yourself through time. The main view shows the past — a live picture-in-picture keeps you anchored to now.</p>
-    <button id="start-btn" onclick="startCamera()">ALLOW CAMERA</button>
+    <div class="icon">📷</div>
+    <h2>Viivekamera</h2>
+    <p>Mitä teit 10 sekuntia sitten?<br>Kohta näet.</p>
+    <button id="start-btn" onclick="startCamera()">Salli kamera</button>
   </div>
 
   <div id="cam-screen">
-    <div id="video-container">
-      <canvas id="delayed-canvas"></canvas>
-      <div id="delay-label">DELAYED</div>
-      <div id="live-pip">
-        <video id="live-video" autoplay muted playsinline></video>
-        <div id="pip-label">LIVE</div>
-      </div>
-      <div id="buffering-bar"><div id="buffering-fill"></div></div>
+    <canvas id="delayed-canvas"></canvas>
+
+    <div id="buffering-overlay">
+      <div id="buf-label">Puskuroidaan…</div>
+      <div id="buf-track"><div id="buf-fill"></div></div>
     </div>
 
-    <div id="controls">
-      <button class="delay-btn active" onclick="setDelay(5, this)">5s</button>
-      <button class="delay-btn" onclick="setDelay(10, this)">10s</button>
-      <button class="delay-btn" onclick="setDelay(15, this)">15s</button>
-      <button class="delay-btn" onclick="setDelay(20, this)">20s</button>
-      <button id="cam-toggle" onclick="toggleCamera()">FLIP</button>
+    <div id="delay-badge">−5 s</div>
+
+    <div id="pip-container">
+      <video id="live-video" autoplay muted playsinline></video>
     </div>
-    <div id="status-text" id="status-text"></div>
+
+    <div id="bottom-bar">
+      <div id="delay-pills">
+        <button class="pill active" onclick="setDelay(5,this)">5 s</button>
+        <button class="pill" onclick="setDelay(10,this)">10 s</button>
+        <button class="pill" onclick="setDelay(15,this)">15 s</button>
+        <button class="pill" onclick="setDelay(20,this)">20 s</button>
+      </div>
+      <button id="flip-btn" onclick="toggleCamera()" title="Vaihda kamera">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 7L16 3l-4 4h3v7a3 3 0 01-6 0v-1H7v1a5 5 0 0010 0V7h3zM8 17l4 4 4-4h-3V10a3 3 0 01-3-3V6H8v1a5 5 0 000 10v0z" fill-rule="evenodd"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
-  <video id="hidden-capture" autoplay muted playsinline></video>
+  <video id="hidden-capture" autoplay muted playsinline style="display:none;"></video>
+  <canvas id="offscreen-canvas" style="display:none;"></canvas>
 </div>
-
-<canvas id="offscreen-canvas" style="display:none;"></canvas>
 
 <script>
   let stream = null;
@@ -225,86 +288,111 @@
   const offscreen = document.getElementById('offscreen-canvas');
   const ctx = delayedCanvas.getContext('2d');
   const offCtx = offscreen.getContext('2d');
-  const bufferingFill = document.getElementById('buffering-fill');
-  const statusText = document.getElementById('status-text');
+  const bufFill = document.getElementById('buf-fill');
+  const bufOverlay = document.getElementById('buffering-overlay');
+  const delayBadge = document.getElementById('delay-badge');
+  const pip = document.getElementById('pip-container');
+
+  function resizeCanvas() {
+    delayedCanvas.width = window.innerWidth;
+    delayedCanvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
 
   async function startCamera() {
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
       hiddenVideo.srcObject = stream;
       liveVideo.srcObject = stream;
       document.getElementById('permission-screen').style.display = 'none';
-      document.getElementById('cam-screen').style.display = 'flex';
+      document.getElementById('cam-screen').style.display = 'block';
       hiddenVideo.onloadedmetadata = () => {
-        const w = hiddenVideo.videoWidth || 640;
-        const h = hiddenVideo.videoHeight || 360;
-        delayedCanvas.width = w;
-        delayedCanvas.height = h;
-        offscreen.width = w;
-        offscreen.height = h;
+        offscreen.width = hiddenVideo.videoWidth || 1280;
+        offscreen.height = hiddenVideo.videoHeight || 720;
         startCapture();
       };
     } catch(e) {
-      document.querySelector('#permission-screen p').textContent = 'Camera access denied. Please allow camera permissions and try again.';
+      document.querySelector('#permission-screen p').textContent =
+        'Kameran käyttö evätty. Salli kamera selaimen asetuksista ja yritä uudelleen.';
     }
   }
 
   function startCapture() {
     if (captureInterval) clearInterval(captureInterval);
-    frameBuffer.forEach(url => URL.revokeObjectURL(url));
+    frameBuffer.forEach(u => URL.revokeObjectURL(u));
     frameBuffer = [];
     isBuffering = true;
-    statusText.textContent = 'BUFFERING...';
+    bufOverlay.classList.remove('hidden');
+    bufFill.style.width = '0%';
     captureInterval = setInterval(captureFrame, FRAME_INTERVAL);
   }
 
   function captureFrame() {
     if (hiddenVideo.readyState < 2) return;
-
+    offCtx.save();
+    if (facingMode === 'user') {
+      offCtx.translate(offscreen.width, 0);
+      offCtx.scale(-1, 1);
+    }
     offCtx.drawImage(hiddenVideo, 0, 0, offscreen.width, offscreen.height);
+    offCtx.restore();
 
     offscreen.toBlob(blob => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       frameBuffer.push(url);
 
-      const targetFrames = delaySeconds * FPS;
-      const progress = Math.min(frameBuffer.length / targetFrames, 1);
-      bufferingFill.style.width = (progress * 100) + '%';
+      const target = delaySeconds * FPS;
+      const progress = Math.min(frameBuffer.length / target, 1);
+      bufFill.style.width = (progress * 100) + '%';
 
-      if (frameBuffer.length > targetFrames) {
-        const oldUrl = frameBuffer.shift();
-        URL.revokeObjectURL(oldUrl);
+      if (frameBuffer.length > target) {
+        const old = frameBuffer.shift();
+        URL.revokeObjectURL(old);
 
         if (isBuffering) {
           isBuffering = false;
-          statusText.textContent = '';
+          bufOverlay.classList.add('hidden');
         }
 
-        const delayedUrl = frameBuffer[0];
         const img = new Image();
-        img.onload = () => ctx.drawImage(img, 0, 0, delayedCanvas.width, delayedCanvas.height);
-        img.src = delayedUrl;
-      } else if (isBuffering) {
-        statusText.textContent = 'BUFFERING  ' + Math.round(progress * 100) + '%';
+        img.onload = () => {
+          const cw = delayedCanvas.width;
+          const ch = delayedCanvas.height;
+          const iw = offscreen.width;
+          const ih = offscreen.height;
+          const scale = Math.max(cw / iw, ch / ih);
+          const dw = iw * scale;
+          const dh = ih * scale;
+          const dx = (cw - dw) / 2;
+          const dy = (ch - dh) / 2;
+          ctx.drawImage(img, dx, dy, dw, dh);
+        };
+        img.src = url;
       }
-    }, 'image/jpeg', 0.7);
+    }, 'image/jpeg', 0.72);
   }
 
-  function setDelay(seconds, btn) {
-    document.querySelectorAll('.delay-btn').forEach(b => b.classList.remove('active'));
+  function setDelay(s, btn) {
+    document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    delaySeconds = seconds;
+    delaySeconds = s;
+    delayBadge.textContent = '−' + s + ' s';
     startCapture();
   }
 
   async function toggleCamera() {
     facingMode = facingMode === 'user' ? 'environment' : 'user';
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-    }
+    if (stream) stream.getTracks().forEach(t => t.stop());
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
       hiddenVideo.srcObject = stream;
       liveVideo.srcObject = stream;
       startCapture();
@@ -312,4 +400,29 @@
       facingMode = facingMode === 'user' ? 'environment' : 'user';
     }
   }
+
+  let pipDragging = false, pipStartX, pipStartY;
+  pip.addEventListener('pointerdown', e => {
+    pipDragging = false;
+    pipStartX = e.clientX;
+    pipStartY = e.clientY;
+    pip.setPointerCapture(e.pointerId);
+  });
+  pip.addEventListener('pointermove', e => {
+    if (!pip.hasPointerCapture(e.pointerId)) return;
+    const dx = Math.abs(e.clientX - pipStartX);
+    const dy = Math.abs(e.clientY - pipStartY);
+    if (dx > 4 || dy > 4) pipDragging = true;
+    if (!pipDragging) return;
+    const rect = pip.getBoundingClientRect();
+    let newRight = window.innerWidth - e.clientX - rect.width / 2;
+    let newTop = e.clientY - rect.height / 2;
+    newRight = Math.max(8, Math.min(window.innerWidth - rect.width - 8, newRight));
+    newTop = Math.max(8, Math.min(window.innerHeight - rect.height - 8, newTop));
+    pip.style.right = newRight + 'px';
+    pip.style.top = newTop + 'px';
+    pip.style.left = 'auto';
+  });
 </script>
+</body>
+</html>
