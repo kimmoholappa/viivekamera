@@ -149,6 +149,8 @@
       object-fit: cover;
       display: block;
     }
+    #live-video.mirrored { transform: scaleX(-1); }
+
 
     #bottom-bar {
       position: absolute;
@@ -300,6 +302,14 @@
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
+  function updateMirror() {
+    if (facingMode === 'user') {
+      liveVideo.style.transform = 'scaleX(-1)';
+    } else {
+      liveVideo.style.transform = 'scaleX(1)';
+    }
+  }
+
   async function startCamera() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -308,6 +318,7 @@
       });
       hiddenVideo.srcObject = stream;
       liveVideo.srcObject = stream;
+      updateMirror();
       document.getElementById('permission-screen').style.display = 'none';
       document.getElementById('cam-screen').style.display = 'block';
       hiddenVideo.onloadedmetadata = () => {
@@ -351,14 +362,12 @@
       bufFill.style.width = (progress * 100) + '%';
 
       if (frameBuffer.length > target) {
-        const old = frameBuffer.shift();
-        URL.revokeObjectURL(old);
-
         if (isBuffering) {
           isBuffering = false;
           bufOverlay.classList.add('hidden');
         }
 
+        const displayUrl = frameBuffer.shift();
         const img = new Image();
         img.onload = () => {
           const cw = delayedCanvas.width;
@@ -371,8 +380,9 @@
           const dx = (cw - dw) / 2;
           const dy = (ch - dh) / 2;
           ctx.drawImage(img, dx, dy, dw, dh);
+          URL.revokeObjectURL(displayUrl);
         };
-        img.src = url;
+        img.src = displayUrl;
       }
     }, 'image/jpeg', 0.72);
   }
@@ -395,6 +405,7 @@
       });
       hiddenVideo.srcObject = stream;
       liveVideo.srcObject = stream;
+      updateMirror();
       startCapture();
     } catch(e) {
       facingMode = facingMode === 'user' ? 'environment' : 'user';
