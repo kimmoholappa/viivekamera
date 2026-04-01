@@ -1,0 +1,315 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #000; font-family: 'Courier New', monospace; color: #fff; }
+
+  #app {
+    width: 100%;
+    min-height: 520px;
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  #permission-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
+    padding: 2rem;
+  }
+  #permission-screen h2 {
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    color: #e0e0e0;
+  }
+  #permission-screen p {
+    font-size: 13px;
+    color: #666;
+    max-width: 300px;
+    line-height: 1.6;
+  }
+  #start-btn {
+    background: transparent;
+    border: 1px solid #444;
+    color: #ccc;
+    padding: 10px 28px;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  #start-btn:hover { border-color: #888; color: #fff; }
+
+  #cam-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+  }
+
+  #video-container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  #delayed-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  #live-pip {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    width: 22%;
+    aspect-ratio: 16/9;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: #111;
+  }
+  #live-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  #delay-label {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.4);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  #pip-label {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.5);
+    white-space: nowrap;
+  }
+
+  #buffering-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: rgba(255,255,255,0.15);
+    width: 100%;
+  }
+  #buffering-fill {
+    height: 100%;
+    background: rgba(255,255,255,0.5);
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  #controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .delay-btn {
+    background: transparent;
+    border: 1px solid #333;
+    color: #777;
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .delay-btn:hover { border-color: #555; color: #ccc; }
+  .delay-btn.active { border-color: #888; color: #fff; background: rgba(255,255,255,0.06); }
+
+  #cam-toggle {
+    background: transparent;
+    border: 1px solid #333;
+    color: #777;
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    margin-left: 8px;
+  }
+  #cam-toggle:hover { border-color: #555; color: #ccc; }
+
+  #status-text {
+    font-size: 11px;
+    color: #444;
+    letter-spacing: 0.1em;
+    min-height: 16px;
+  }
+
+  #hidden-capture { display: none; }
+</style>
+
+<div id="app">
+  <div id="permission-screen">
+    <h2>DELAY CAM</h2>
+    <p>Watch yourself through time. The main view shows the past — a live picture-in-picture keeps you anchored to now.</p>
+    <button id="start-btn" onclick="startCamera()">ALLOW CAMERA</button>
+  </div>
+
+  <div id="cam-screen">
+    <div id="video-container">
+      <canvas id="delayed-canvas"></canvas>
+      <div id="delay-label">DELAYED</div>
+      <div id="live-pip">
+        <video id="live-video" autoplay muted playsinline></video>
+        <div id="pip-label">LIVE</div>
+      </div>
+      <div id="buffering-bar"><div id="buffering-fill"></div></div>
+    </div>
+
+    <div id="controls">
+      <button class="delay-btn active" onclick="setDelay(5, this)">5s</button>
+      <button class="delay-btn" onclick="setDelay(10, this)">10s</button>
+      <button class="delay-btn" onclick="setDelay(15, this)">15s</button>
+      <button class="delay-btn" onclick="setDelay(20, this)">20s</button>
+      <button id="cam-toggle" onclick="toggleCamera()">FLIP</button>
+    </div>
+    <div id="status-text" id="status-text"></div>
+  </div>
+
+  <video id="hidden-capture" autoplay muted playsinline></video>
+</div>
+
+<canvas id="offscreen-canvas" style="display:none;"></canvas>
+
+<script>
+  let stream = null;
+  let facingMode = 'user';
+  let delaySeconds = 5;
+  let captureInterval = null;
+  let frameBuffer = [];
+  let isBuffering = true;
+  const FPS = 10;
+  const FRAME_INTERVAL = 1000 / FPS;
+
+  const hiddenVideo = document.getElementById('hidden-capture');
+  const liveVideo = document.getElementById('live-video');
+  const delayedCanvas = document.getElementById('delayed-canvas');
+  const offscreen = document.getElementById('offscreen-canvas');
+  const ctx = delayedCanvas.getContext('2d');
+  const offCtx = offscreen.getContext('2d');
+  const bufferingFill = document.getElementById('buffering-fill');
+  const statusText = document.getElementById('status-text');
+
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
+      hiddenVideo.srcObject = stream;
+      liveVideo.srcObject = stream;
+      document.getElementById('permission-screen').style.display = 'none';
+      document.getElementById('cam-screen').style.display = 'flex';
+      hiddenVideo.onloadedmetadata = () => {
+        const w = hiddenVideo.videoWidth || 640;
+        const h = hiddenVideo.videoHeight || 360;
+        delayedCanvas.width = w;
+        delayedCanvas.height = h;
+        offscreen.width = w;
+        offscreen.height = h;
+        startCapture();
+      };
+    } catch(e) {
+      document.querySelector('#permission-screen p').textContent = 'Camera access denied. Please allow camera permissions and try again.';
+    }
+  }
+
+  function startCapture() {
+    if (captureInterval) clearInterval(captureInterval);
+    frameBuffer.forEach(url => URL.revokeObjectURL(url));
+    frameBuffer = [];
+    isBuffering = true;
+    statusText.textContent = 'BUFFERING...';
+    captureInterval = setInterval(captureFrame, FRAME_INTERVAL);
+  }
+
+  function captureFrame() {
+    if (hiddenVideo.readyState < 2) return;
+
+    offCtx.drawImage(hiddenVideo, 0, 0, offscreen.width, offscreen.height);
+
+    offscreen.toBlob(blob => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      frameBuffer.push(url);
+
+      const targetFrames = delaySeconds * FPS;
+      const progress = Math.min(frameBuffer.length / targetFrames, 1);
+      bufferingFill.style.width = (progress * 100) + '%';
+
+      if (frameBuffer.length > targetFrames) {
+        const oldUrl = frameBuffer.shift();
+        URL.revokeObjectURL(oldUrl);
+
+        if (isBuffering) {
+          isBuffering = false;
+          statusText.textContent = '';
+        }
+
+        const delayedUrl = frameBuffer[0];
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0, delayedCanvas.width, delayedCanvas.height);
+        img.src = delayedUrl;
+      } else if (isBuffering) {
+        statusText.textContent = 'BUFFERING  ' + Math.round(progress * 100) + '%';
+      }
+    }, 'image/jpeg', 0.7);
+  }
+
+  function setDelay(seconds, btn) {
+    document.querySelectorAll('.delay-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    delaySeconds = seconds;
+    startCapture();
+  }
+
+  async function toggleCamera() {
+    facingMode = facingMode === 'user' ? 'environment' : 'user';
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
+      hiddenVideo.srcObject = stream;
+      liveVideo.srcObject = stream;
+      startCapture();
+    } catch(e) {
+      facingMode = facingMode === 'user' ? 'environment' : 'user';
+    }
+  }
+</script>
